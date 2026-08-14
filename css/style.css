@@ -1,0 +1,364 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+:root {
+  --ice-blue: #bfe3f2;
+  --deep-blue: #2c6f91;
+  --frost: #eaf7ff;
+  --panel-bg: rgba(240, 252, 255, 0.94);
+  --panel-border: #9fd0e6;
+  --shadow: 0 6px 24px rgba(30, 70, 100, 0.3);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  background: linear-gradient(180deg, #dcebf5, #c4deee);
+}
+
+#game-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+}
+
+/* ---------- HUD ---------- */
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  background: linear-gradient(180deg, rgba(24, 62, 90, 0.85), rgba(24, 62, 90, 0));
+  pointer-events: none;
+}
+
+.hud-title {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.hud-controls {
+  display: flex;
+  gap: 14px;
+}
+
+.hint {
+  color: rgba(255,255,255,0.9);
+  font-size: 12px;
+  background: rgba(20,50,75,0.45);
+  padding: 4px 10px;
+  border-radius: 14px;
+  backdrop-filter: blur(4px);
+}
+
+/* ---------- 准星 / 选中 ---------- */
+#crosshair {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(30, 80, 120, 0.6), 0 0 12px rgba(255,255,255,0.7);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 5;
+}
+#crosshair.on { display: block; }
+#crosshair.active {
+  border-color: #ffd966;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.4), 0 0 14px #ffd966;
+}
+
+/* ---------- 编辑横幅 ---------- */
+#edit-banner {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 217, 102, 0.95);
+  color: #4a3500;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  z-index: 6;
+  white-space: nowrap;
+}
+
+/* ---------- 编辑面板 ---------- */
+#editor-panel {
+  position: absolute;
+  top: 118px;
+  right: 16px;
+  width: 232px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  z-index: 7;
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #7ec8e3, #4a9fc4);
+  color: #fff;
+  font-weight: 700;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+}
+.icon-btn:hover { color: #ffe08a; }
+
+.panel-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: #2c5a75;
+  font-weight: 600;
+}
+
+.panel-body input[type="text"],
+.panel-body select {
+  padding: 7px 9px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+  color: #234;
+  outline: none;
+}
+.panel-body input:focus,
+.panel-body select:focus { border-color: #4a9fc4; box-shadow: 0 0 0 2px rgba(74,159,196,0.25); }
+
+.range-row { flex-direction: row !important; align-items: center; justify-content: space-between; }
+.range-row input[type="range"] { flex: 1; }
+.range-row span { width: 34px; text-align: right; color: #1e4a66; }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.06s ease, filter 0.1s ease;
+}
+.btn:active { transform: scale(0.96); }
+
+.btn.primary { background: linear-gradient(135deg, #7ec8e3, #4a9fc4); color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { background: linear-gradient(135deg, #f28787, #d65353); color: #fff; }
+.btn.danger:hover { filter: brightness(1.08); }
+
+/* ---------- 模板面板 ---------- */
+#palette {
+  position: absolute;
+  top: 118px;
+  left: 16px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 10px;
+  z-index: 7;
+  backdrop-filter: blur(6px);
+}
+
+.palette-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2c5a75;
+  padding: 2px 4px 8px;
+}
+
+#palette-items {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 300px;
+}
+
+.palette-item {
+  width: 46px;
+  height: 46px;
+  background: #fff;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.08s ease, border-color 0.1s ease;
+}
+.palette-item:hover { transform: scale(1.1); border-color: #4a9fc4; }
+.palette-item.selected { border-color: #ffb833; box-shadow: 0 0 0 2px #ffb833; }
+
+/* ---------- Toast ---------- */
+#toast {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(24, 62, 90, 0.9);
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 8;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- 过渡层（加载动画） ---------- */
+#transition {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #dff1fb 0%, #a8cfe4 60%, #8ab8d6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+#transition.show { opacity: 1; pointer-events: all; }
+
+.trans-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.trans-snow {
+  font-size: 44px;
+  animation: snowFloat 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(30,80,120,0.3));
+}
+
+.trans-spinner {
+  width: 42px;
+  height: 42px;
+  border: 5px solid rgba(255,255,255,0.7);
+  border-top-color: #4a9fc4;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+#trans-text {
+  color: #2c5a75;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes snowFloat {
+  0%, 100% { transform: translateY(-6px) rotate(-6deg); }
+  50% { transform: translateY(6px) rotate(6deg); }
+}
+
+/* ---------- 门交互提示 ---------- */
+#door-hint, #exit-hint {
+  position: absolute;
+  top: 64%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 253, 240, 0.95);
+  color: #2c5a75;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 2px solid #ffd966;
+  box-shadow: var(--shadow);
+  z-index: 9;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: hintBounce 0.8s ease-in-out infinite;
+}
+#door-hint b, #exit-hint b {
+  color: #ff8c42;
+  font-size: 17px;
+}
+@keyframes hintBounce {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -54%) scale(1.05); }
+}
+
+.hidden { display: none !important; }
+
+/* ---------- 定位按钮 ---------- */
+#locate-btn {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid var(--panel-border);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  z-index: 10;
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+#locate-btn:hover { transform: translateY(-50%) scale(1.08); filter: brightness(1.05); }
+#locate-btn:active { transform: translateY(-50%) scale(0.94); }

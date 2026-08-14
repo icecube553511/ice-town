@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ice Town · 冰雪小镇</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="game-root">
+    <canvas id="game" tabindex="0"></canvas>
+
+    <!-- 顶部 HUD -->
+    <div id="hud">
+      <div class="hud-title">❄ Ice Town · 冰雪小镇</div>
+      <div class="hud-controls">
+        <span class="hint">WASD / 方向键 移动</span>
+        <span class="hint">Shift 疾跑</span>
+        <span class="hint">🖱 点击移动 / 点建筑进入</span>
+        <span class="hint">🖱 按住拖动 平移视角</span>
+        <span class="hint">🖱 滚轮 缩放视野</span>
+        <span class="hint">F 进门 / 出门</span>
+        <span class="hint">E 编辑模式</span>
+        <span class="hint">Enter 保存</span>
+      </div>
+    </div>
+
+    <div id="crosshair"></div>
+
+    <!-- 定位按钮：画面中心立即回到人物 -->
+    <button id="locate-btn" title="定位到人物">🎯</button>
+
+    <!-- 过渡层：加载动画 -->
+    <div id="transition">
+      <div class="trans-inner">
+        <div class="trans-snow">❄</div>
+        <div class="trans-spinner"></div>
+        <div id="trans-text">正在进入…</div>
+      </div>
+    </div>
+
+    <!-- 门交互提示 -->
+    <div id="door-hint" class="hidden">按 <b>F</b> 进入</div>
+    <div id="exit-hint" class="hidden">按 <b>F</b> 离开</div>
+
+    <!-- 编辑模式提示 -->
+    <div id="edit-banner" class="hidden">✏ 编辑模式：在庭院内点击选择建筑，可拖动、改名、改色、删改或新建</div>
+
+    <!-- 建筑编辑面板 -->
+    <div id="editor-panel" class="hidden">
+      <div class="panel-header">
+        <span id="panel-title">编辑建筑</span>
+        <button id="panel-close" class="icon-btn" title="关闭">✕</button>
+      </div>
+      <div class="panel-body">
+        <label>名称
+          <input type="text" id="prop-name" maxlength="20" placeholder="给建筑起个名字">
+        </label>
+        <label>类型
+          <select id="prop-type">
+            <option value="house">🏠 住宅</option>
+            <option value="shop">🛍 商店</option>
+            <option value="tavern">🍺 酒馆</option>
+            <option value="bakery">🥖 面包店</option>
+            <option value="library">📚 图书馆</option>
+            <option value="church">⛪ 教堂</option>
+            <option value="inn">🛏 旅店</option>
+            <option value="tree">🌲 树木</option>
+            <option value="snowman">⛄ 雪人</option>
+            <option value="lamp">💡 路灯</option>
+            <option value="fence">🚧 栅栏</option>
+            <option value="fountain">⛲ 喷泉</option>
+            <option value="ice">🧊 冰雕</option>
+          </select>
+        </label>
+        <label>颜色
+          <input type="color" id="prop-color" value="#7ec8e3">
+        </label>
+        <label class="range-row">大小
+          <input type="range" id="prop-size" min="0.5" max="2" step="0.1" value="1">
+          <span id="prop-size-val">1.0</span>
+        </label>
+        <div class="btn-row">
+          <button id="btn-save" class="btn primary">保存</button>
+          <button id="btn-delete" class="btn danger">删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 建筑模板（新建用） -->
+    <div id="palette" class="hidden">
+      <div class="palette-title">➕ 新建建筑</div>
+      <div id="palette-items"></div>
+    </div>
+
+    <div id="toast"></div>
+  </div>
+
+  <script src="js/town.js"></script>
+  <script src="js/interior.js"></script>
+  <script src="js/pathfinding.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
