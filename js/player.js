@@ -145,15 +145,17 @@ class Player {
 
 /* ============================================================
    像素精灵数据：12 列 × 20 行
-   H 头发（含猫耳）/ S 皮肤 / E 眼睛 / C 脸颊 / W 白色主体 / w 白色阴影
-   R 红色围巾 / B 白色靴子 / b 靴子阴影
+   F 白色猫耳/眼睛高光 / P 粉色内耳 / H 金发 / S 皮肤 / E 眼睛 / C 脸颊
+   W 白色主体 / w 白色阴影 / R 红色围巾 / B 白色靴子 / b 靴子阴影
    ============================================================ */
 const SPRITE_PX = 2;
 const SPRITE_W = 12;
 const SPRITE_H = 20;
 
 const SPRITE_PALETTE = {
-  H: '#f0c07f',  // 金发（猫耳同色）
+  F: '#ffffff',  // 白色猫耳 / 眼睛高光
+  P: '#ffb3c8',  // 粉色内耳
+  H: '#f0c07f',  // 金发
   S: '#ffe6cc',  // 皮肤
   E: '#33414f',  // 眼睛
   C: '#ffb1a0',  // 脸颊
@@ -167,11 +169,11 @@ const SPRITE_PALETTE = {
 const SPRITE_FRAMES = [
   // ---- 0 待机 ----
   [
-    'H....HH....H',
-    'HH..HHHH..HH',
-    'HHHSSSSSSHHH',
-    '.HSSSSSSSSH.',
-    '.HSESSSSESH.',
+    'F....HH....F',
+    'FF..HHHH..FF',
+    'FFPSSSSSSPFF',
+    '.HSEESSEESH.',
+    '.HSEFSSFESH.',
     '.HSSCSSSCSH.',
     '.HSSSSSSSSH.',
     '..HSSSSSSH..',
@@ -190,11 +192,11 @@ const SPRITE_FRAMES = [
   ],
   // ---- 1 走路·右脚 ----
   [
-    'H....HH....H',
-    'HH..HHHH..HH',
-    'HHHSSSSSSHHH',
-    '.HSSSSSSSSH.',
-    '.HSESSSSESH.',
+    'F....HH....F',
+    'FF..HHHH..FF',
+    'FFPSSSSSSPFF',
+    '.HSEESSEESH.',
+    '.HSEFSSFESH.',
     '.HSSCSSSCSH.',
     '.HSSSSSSSSH.',
     '..HSSSSSSH..',
@@ -213,11 +215,11 @@ const SPRITE_FRAMES = [
   ],
   // ---- 2 走路·左脚 ----
   [
-    'H....HH....H',
-    'HH..HHHH..HH',
-    'HHHSSSSSSHHH',
-    '.HSSSSSSSSH.',
-    '.HSESSSSESH.',
+    'F....HH....F',
+    'FF..HHHH..FF',
+    'FFPSSSSSSPFF',
+    '.HSEESSEESH.',
+    '.HSEFSSFESH.',
     '.HSSCSSSCSH.',
     '.HSSSSSSSSH.',
     '..HSSSSSSH..',
@@ -236,11 +238,11 @@ const SPRITE_FRAMES = [
   ],
   // ---- 3 跑步·跨步 ----
   [
-    'H....HH....H',
-    'HH..HHHH..HH',
-    'HHHSSSSSSHHH',
-    '.HSSSSSSSSH.',
-    '.HSESSSSESH.',
+    'F....HH....F',
+    'FF..HHHH..FF',
+    'FFPSSSSSSPFF',
+    '.HSEESSEESH.',
+    '.HSEFSSFESH.',
     '.HSSCSSSCSH.',
     '.HSSSSSSSSH.',
     '..HSSSSSSH..',
@@ -259,11 +261,11 @@ const SPRITE_FRAMES = [
   ],
   // ---- 4 跑步·并步 ----
   [
-    'H....HH....H',
-    'HH..HHHH..HH',
-    'HHHSSSSSSHHH',
-    '.HSSSSSSSSH.',
-    '.HSESSSSESH.',
+    'F....HH....F',
+    'FF..HHHH..FF',
+    'FFPSSSSSSPFF',
+    '.HSEESSEESH.',
+    '.HSEFSSFESH.',
     '.HSSCSSSCSH.',
     '.HSSSSSSSSH.',
     '..HSSSSSSH..',
