@@ -45,35 +45,45 @@
   let autoEnter = null;    // 点击建筑后待自动进入的建筑
 
   // ---------- 场景管理 ----------
-  // scene.name: 'town' | 'interior'
+  // scene.name: 'town' | 'palace' | 'interior'
+  // scene.map: 当前世界地图（进入屋内时保留）
   // scene.interior: Interior 实例（屋内）
   // scene.building: 当前进入的建筑（用于出门复位）
   const scene = {
     name: 'town',
+    map: 'town',
     interior: null,
     building: null,
   };
 
+  // 世界地图集合
+  const maps = { town, palace };
+  // 当前世界地图（屋内场景时返回其所属地图）
+  function curMap() {
+    return maps[scene.name === 'interior' ? scene.map : scene.name] || town;
+  }
+
   // 当前世界（碰撞 + 边界 + 尺寸）
   function currentWorld() {
-    if (scene.name === 'town') {
+    if (scene.name !== 'interior') {
+      const m = curMap();
       return {
-        bounds: { x: 0, y: 0, w: town.worldW, h: town.worldH },
-        blockers: town.buildings.map((b) => b.rect()),
+        bounds: { x: 0, y: 0, w: m.worldW, h: m.worldH },
+        blockers: m.buildings.map((b) => b.rect()),
         isSolid: (r) => {
-          for (const b of town.buildings) {
+          for (const b of m.buildings) {
             const br = b.rect();
             if (r.x < br.x + br.w && r.x + r.w > br.x &&
                 r.y < br.y + br.h && r.y + r.h > br.y) return true;
           }
           return false;
         },
-        width: () => town.worldW,
-        height: () => town.worldH,
+        width: () => m.worldW,
+        height: () => m.worldH,
         isWalkable: (cx, cy) => {
-          if (cx < 0 || cy < 0 || cx >= Math.ceil(town.worldW / PF_GRID) || cy >= Math.ceil(town.worldH / PF_GRID)) return false;
+          if (cx < 0 || cy < 0 || cx >= Math.ceil(m.worldW / PF_GRID) || cy >= Math.ceil(m.worldH / PF_GRID)) return false;
           const r = { x: cx * PF_GRID, y: cy * PF_GRID, w: PF_GRID, h: PF_GRID };
-          for (const b of town.buildings) {
+          for (const b of m.buildings) {
             const br = b.rect();
             if (r.x < br.x + br.w && r.x + r.w > br.x &&
                 r.y < br.y + br.h && r.y + r.h > br.y) return false;
@@ -162,15 +172,22 @@
   }
 
   // ---------- 门交互 ----------
-  const ENTERABLE = ['house', 'shop', 'ice', 'tavern', 'bakery', 'library', 'church', 'inn'];
+  const ENTERABLE = ['house', 'shop', 'ice', 'tavern', 'bakery', 'library', 'church', 'inn', 'palace'];
   const doorHint = document.getElementById('door-hint');
   const exitHint = document.getElementById('exit-hint');
+  const hudTitle = document.getElementById('hud-title');
 
-  // 小镇：找到离玩家最近、可进入的建筑（看其底部门）
+  // HUD 标题跟随地图
+  function updateHudTitle() {
+    if (!hudTitle) return;
+    hudTitle.textContent = scene.name === 'palace' ? '👑 Ice Town · 王室宫城' : '❄ Ice Town · 冰雪小镇';
+  }
+
+  // 找到离玩家最近、可进入的建筑（看其底部门）
   function buildingDoorNear() {
-    if (scene.name !== 'town') return null;
+    if (scene.name === 'interior') return null;
     let best = null, bestD = 52;
-    for (const b of town.buildings) {
+    for (const b of curMap().buildings) {
       if (!ENTERABLE.includes(b.type)) continue;
       const r = b.rect();
       const dx = player.x - r.cx;
@@ -183,7 +200,7 @@
 
   function updateDoorHint() {
     const ed = Editor.active;
-    if (scene.name === 'town') {
+    if (scene.name !== 'interior') {
       exitHint.classList.add('hidden'); // 出门提示只在屋内显示
       const b = buildingDoorNear();
       if (b && !ed) {
@@ -246,6 +263,7 @@
     if (transition) return;
     startTransition('正在进入…', () => {
       Editor.exit();
+      scene.map = scene.name;   // 记录所在世界地图
       scene.name = 'interior';
       scene.building = b;
       scene.interior = new Interior(b.type);
@@ -263,7 +281,7 @@
     startTransition('正在离开…', () => {
       const b = scene.building;
       const r = b.rect();
-      scene.name = 'town';
+      scene.name = scene.map;   // 回到之前的世界地图
       scene.interior = null;
       player.setPosition(r.cx, r.y + r.h + 40);
       player.frame = 0;
@@ -277,19 +295,20 @@
   function drawGround() {
     const vw = canvas.width / devicePixelRatio / zoom;
     const vh = canvas.height / devicePixelRatio / zoom;
+    const m = curMap();
 
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
 
     // 雪地底色
     ctx.fillStyle = '#eef6fb';
-    ctx.fillRect(cam.x - 10, cam.y - 10, town.worldW + 20, town.worldH + 20);
+    ctx.fillRect(cam.x - 10, cam.y - 10, m.worldW + 20, m.worldH + 20);
 
     // 为节省性能，只绘制可见区域内的瓦片格线
     const x0 = Math.max(0, Math.floor(cam.x / TILE));
-    const x1 = Math.min(town.tilesW, Math.ceil((cam.x + vw) / TILE));
+    const x1 = Math.min(m.tilesW, Math.ceil((cam.x + vw) / TILE));
     const y0 = Math.max(0, Math.floor(cam.y / TILE));
-    const y1 = Math.min(town.tilesH, Math.ceil((cam.y + vh) / TILE));
+    const y1 = Math.min(m.tilesH, Math.ceil((cam.y + vh) / TILE));
 
     // 轻微格纹（雪地微光）
     ctx.strokeStyle = 'rgba(150,190,215,0.18)';
@@ -307,13 +326,15 @@
 
     drawRoads();
     drawSquares();
+    drawTeleports();
   }
 
   // ---------- 渲染：道路 ----------
   function drawRoads() {
+    const m = curMap();
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
-    for (const rd of town.roads) {
+    for (const rd of m.roads) {
       const x = rd.x * TILE, y = rd.y * TILE, w = rd.w * TILE, h = rd.h * TILE;
       // 路面
       ctx.fillStyle = '#d9cfc0';
@@ -346,9 +367,10 @@
 
   // ---------- 渲染：广场 / 集市铺装 ----------
   function drawSquares() {
+    const m = curMap();
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
-    for (const sq of town.squares) {
+    for (const sq of m.squares) {
       const x = sq.x * TILE, y = sq.y * TILE, w = sq.w * TILE, h = sq.h * TILE;
       ctx.fillStyle = 'rgba(210,226,236,0.85)';
       ctx.fillRect(x, y, w, h);
@@ -367,11 +389,45 @@
     ctx.restore();
   }
 
-  // ---------- 渲染：装饰树（固定不可编辑） ----------
-  function drawDecorTrees() {
+  // ---------- 渲染：地图边缘传送点 ----------
+  function drawTeleports() {
+    const m = curMap();
+    if (!m.teleports || !m.teleports.length) return;
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
-    for (const t of town.decorTrees) {
+    const t = performance.now() / 1000;
+    for (const tp of m.teleports) {
+      const x = (tp.x + tp.w / 2) * TILE;
+      const y = (tp.y + tp.h / 2) * TILE;
+      const pulse = (Math.sin(t * 3) + 1) / 2;
+      // 地面光晕
+      ctx.fillStyle = 'rgba(140,220,255,' + (0.22 + pulse * 0.14) + ')';
+      ctx.beginPath(); ctx.ellipse(x, y, 66, 52, 0, 0, Math.PI * 2); ctx.fill();
+      // 呼吸外环
+      ctx.strokeStyle = 'rgba(120,200,255,' + (0.5 + pulse * 0.3) + ')';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(x, y, 44 + pulse * 8, 34 + pulse * 6, 0, 0, Math.PI * 2); ctx.stroke();
+      // 内圈箭头
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.ellipse(x, y, 26, 18, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      // 标签
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.font = 'bold 15px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(tp.to === 'palace' ? '→ 王室宫城' : '← 冰雪小镇', x, y - 58);
+    }
+    ctx.restore();
+  }
+
+  // ---------- 渲染：装饰树（固定不可编辑） ----------
+  function drawDecorTrees() {
+    const m = curMap();
+    ctx.save();
+    ctx.translate(-cam.x, -cam.y);
+    for (const t of m.decorTrees) {
       const x = t.x * TILE, y = t.y * TILE;
       drawTree(ctx, x, y, t.s, 'rgba(255,255,255,0.5)', '#5f96ad');
     }
@@ -380,9 +436,10 @@
 
   // ---------- 渲染：建筑 ----------
   function drawBuildings() {
+    const m = curMap();
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
-    for (const b of town.buildings) drawBuilding(ctx, b);
+    for (const b of m.buildings) drawBuilding(ctx, b);
     ctx.restore();
   }
 
@@ -400,6 +457,10 @@
       case 'bench': drawBench(ctx, r.cx, r.cy, b.size, b.color); break;
       case 'well': drawWell(ctx, r.cx, r.cy, b.size, b.color); break;
       case 'pond': drawPond(ctx, r.cx, r.cy, b.size, b.color); break;
+      case 'wall': drawWall(ctx, r.cx, r.cy, b.size, b.color); break;
+      case 'tower': drawTower(ctx, r.cx, r.cy, b.size, b.color); break;
+      case 'palace': drawPalace(ctx, b, r); break;
+      case 'statue': drawStatue(ctx, r.cx, r.cy, b.size, b.color); break;
       case 'church': drawChurch(ctx, b, r); break;
       case 'shop':
       case 'house':
@@ -720,6 +781,136 @@
     ctx.restore();
   }
 
+  function drawWall(ctx, x, y, s, color = '#b8bec8') {
+    ctx.save();
+    ctx.translate(x, y + 12);
+    ctx.scale(s, s);
+    ctx.fillStyle = color;
+    ctx.fillRect(-20, -10, 40, 28);
+    // 砖缝
+    ctx.strokeStyle = 'rgba(90,100,115,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-20, -10, 40, 28);
+    ctx.beginPath(); ctx.moveTo(-20, -2); ctx.lineTo(20, -2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-20, 8); ctx.lineTo(20, 8); ctx.stroke();
+    for (const bx of [-10, 0, 10]) {
+      ctx.beginPath(); ctx.moveTo(bx, -10); ctx.lineTo(bx, -2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx - 10, -2); ctx.lineTo(bx - 10, 8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx, 8); ctx.lineTo(bx, 18); ctx.stroke();
+    }
+    // 积雪顶
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillRect(-20, -10, 40, 6);
+    ctx.restore();
+  }
+
+  function drawTower(ctx, x, y, s, color = '#cdd5de') {
+    ctx.save();
+    ctx.translate(x, y + 14);
+    ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(30,70,100,0.18)';
+    ctx.beginPath(); ctx.ellipse(0, 40, 34, 8, 0, 0, Math.PI * 2); ctx.fill();
+    // 塔身
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.roundRect(-26, -22, 52, 62, 6); ctx.fill();
+    ctx.strokeStyle = shade(color, 0.8); ctx.lineWidth = 2; ctx.stroke();
+    // 砖纹
+    ctx.strokeStyle = 'rgba(90,100,115,0.35)'; ctx.lineWidth = 1.5;
+    for (let wy = -22; wy < 40; wy += 12) {
+      ctx.beginPath(); ctx.moveTo(-26, wy); ctx.lineTo(26, wy); ctx.stroke();
+    }
+    // 窗户
+    ctx.fillStyle = '#3a4a5c';
+    ctx.beginPath(); ctx.roundRect(-6, 0, 12, 16, 4); ctx.fill();
+    // 城齿
+    ctx.fillStyle = color;
+    for (let cx = -26; cx < 26; cx += 13) {
+      ctx.fillRect(cx, -30, 9, 8);
+    }
+    // 尖顶
+    ctx.fillStyle = '#5b8fae';
+    ctx.beginPath(); ctx.moveTo(-28, -30); ctx.lineTo(0, -58); ctx.lineTo(28, -30); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.moveTo(-24, -30); ctx.lineTo(0, -54); ctx.lineTo(24, -30); ctx.closePath(); ctx.fill();
+    // 旗帜
+    ctx.fillStyle = '#e8645a';
+    ctx.fillRect(-1, -72, 2, 14);
+    ctx.beginPath(); ctx.moveTo(1, -70); ctx.lineTo(19, -64); ctx.lineTo(1, -58); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPalace(ctx, b, r) {
+    // 阴影
+    ctx.fillStyle = 'rgba(30,70,100,0.18)';
+    ctx.beginPath(); ctx.ellipse(r.cx, r.y + r.h - 4, r.w * 0.42, 8, 0, 0, Math.PI * 2); ctx.fill();
+    // 主体
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.roundRect(r.x, r.y + r.h * 0.28, r.w, r.h * 0.72, 6); ctx.fill();
+    ctx.strokeStyle = shade(b.color); ctx.lineWidth = 2; ctx.stroke();
+    // 立柱
+    for (const cx of [r.x + r.w * 0.12, r.x + r.w * 0.88]) {
+      ctx.fillStyle = '#e8e2d0';
+      ctx.beginPath(); ctx.roundRect(cx - 6, r.y + r.h * 0.3, 12, r.h * 0.7, 3); ctx.fill();
+    }
+    // 拱形大门
+    ctx.fillStyle = shade(b.color, 0.7);
+    ctx.beginPath(); ctx.roundRect(r.cx - r.w * 0.08, r.y + r.h * 0.58, r.w * 0.16, r.h * 0.42, 6); ctx.fill();
+    ctx.beginPath(); ctx.arc(r.cx, r.y + r.h * 0.58, r.w * 0.08, Math.PI, 0); ctx.fill();
+    // 金色大屋顶
+    ctx.fillStyle = '#d4a843';
+    ctx.beginPath();
+    ctx.moveTo(r.x - 8, r.y + r.h * 0.34);
+    ctx.lineTo(r.cx, r.y - r.h * 0.5);
+    ctx.lineTo(r.x + r.w + 8, r.y + r.h * 0.34);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 2; ctx.stroke();
+    // 屋顶积雪 + 中央旗
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(r.x - 5, r.y + r.h * 0.34);
+    ctx.lineTo(r.cx, r.y - r.h * 0.44);
+    ctx.lineTo(r.x + r.w + 5, r.y + r.h * 0.34);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#e8645a';
+    ctx.fillRect(r.cx - 1.5, r.y - r.h * 0.5 - 18, 3, 18);
+    ctx.beginPath();
+    ctx.moveTo(r.cx + 1.5, r.y - r.h * 0.5 - 16);
+    ctx.lineTo(r.cx + 18, r.y - r.h * 0.5 - 10);
+    ctx.lineTo(r.cx + 1.5, r.y - r.h * 0.5 - 4);
+    ctx.closePath(); ctx.fill();
+    // 名称牌
+    if (b.name) {
+      ctx.fillStyle = 'rgba(30,60,90,0.75)';
+      ctx.font = 'bold 13px "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(b.name, r.cx, r.y + r.h + 16);
+    }
+  }
+
+  function drawStatue(ctx, x, y, s, color = '#9aa7b2') {
+    ctx.save();
+    ctx.translate(x, y + 14);
+    ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(30,70,100,0.2)';
+    ctx.beginPath(); ctx.ellipse(0, 16, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+    // 基座
+    ctx.fillStyle = shade(color, 0.75);
+    ctx.fillRect(-14, 2, 28, 14);
+    ctx.fillStyle = color;
+    ctx.fillRect(-10, -2, 20, 6);
+    // 雕像人形（卫兵）
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.roundRect(-6, -20, 12, 20, 4); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -25, 7, 0, Math.PI * 2); ctx.fill();
+    // 头盔
+    ctx.fillStyle = shade(color, 0.8);
+    ctx.beginPath(); ctx.arc(0, -27, 7, Math.PI, 0); ctx.fill();
+    // 长枪
+    ctx.strokeStyle = shade(color, 0.6); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(6, -6); ctx.lineTo(14, -30); ctx.stroke();
+    ctx.restore();
+  }
+
   function drawChurch(ctx, b, r) {
     // 阴影
     ctx.fillStyle = 'rgba(30,70,100,0.18)';
@@ -890,13 +1081,14 @@
       }
       if (code === 'Enter') Editor.save();
       if (code === 'KeyF') {
-        if (scene.name === 'town') {
+        if (scene.name !== 'interior') {
           const b = buildingDoorNear();
           if (b) enterBuilding(b);
+          else Editor.toast('附近没有可进入的建筑');
         } else if (scene.interior && scene.interior.atExit(player)) {
           exitBuilding();
         } else {
-          Editor.toast(scene.name === 'town' ? '附近没有可进入的建筑' : '请先走到门口');
+          Editor.toast('请先走到门口');
         }
       }
     }
@@ -998,8 +1190,8 @@
     panHold = 0;
     if (Editor.active || transition) return;
     const w = screenToWorld(e);
-    if (scene.name === 'town') {
-      const b = town.buildingAt(w.x, w.y);
+    if (scene.name !== 'interior') {
+      const b = curMap().buildingAt(w.x, w.y);
       if (b && ENTERABLE.includes(b.type)) {
         // 已经站在门前：直接进入
         if (buildingDoorNear() === b) {
@@ -1096,7 +1288,24 @@
       if (autoEnter && (!player.path || player.path.length === 0)) {
         const b = autoEnter;
         autoEnter = null;
-        if (scene.name === 'town' && buildingDoorNear() === b) enterBuilding(b);
+        if (scene.name !== 'interior' && buildingDoorNear() === b) enterBuilding(b);
+      }
+      // 地图边缘传送点：靠近自动传送到对应地图
+      if (scene.name !== 'interior') {
+        const tp = curMap().teleportAt(player.rect());
+        if (tp) {
+          startTransition(tp.text || '正在传送…', () => {
+            scene.name = tp.to;
+            scene.map = tp.to;
+            player.setPosition(tp.spawn.x, tp.spawn.y);
+            player.path = null;
+            targetMarker = null;
+            autoEnter = null;
+            panHold = 0;
+            updateHudTitle();
+            snapCamera();
+          });
+        }
       }
       if (!panning && panHold <= 0) updateCamera(viewW, viewH, dt);
       updateDoorHint();
@@ -1113,7 +1322,7 @@
     }
 
     // 渲染
-    if (scene.name === 'town') {
+    if (scene.name !== 'interior') {
       drawGround();
       drawDecorTrees();
       drawBuildings();
@@ -1134,6 +1343,7 @@
 
   // 启动时尝试加载存档
   if (!Editor.load()) console.log('新建小镇');
+  updateHudTitle();
 
   // 调试钩子（测试用）
   window.__icetown = { scene, player, cam, currentWorld, enterBuilding, exitBuilding, buildingDoorNear };

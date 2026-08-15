@@ -15,6 +15,7 @@ const ROOM_SIZES = {
   library: { w: 16, h: 11 },
   church:  { w: 18, h: 14 },
   inn:     { w: 16, h: 12 },
+  palace:  { w: 18, h: 14 },
 };
 
 // 每种房屋类型的墙/地板配色
@@ -27,6 +28,7 @@ const ROOM_STYLE = {
   library: { wall: '#d9c8a8', floor: '#b8a284' },
   church:  { wall: '#dcd8ea', floor: '#b0a8c0' },
   inn:     { wall: '#e8c9a8', floor: '#c9a27a' },
+  palace:  { wall: '#f5e6d0', floor: '#d9c4a2' },
 };
 
 // 家具绘制辅助：给定中心点与半宽/半高画矩形
@@ -268,6 +270,29 @@ class Interior {
         this.decor.push(this._f('rug', this.w / 2, 9.0 * T, 3.0 * T, 6.6 * T, { color: '#8a7ab0' }));
         this.decor.push(this._f('window', this.w / 2 - 2.6 * T, 1.2 * T, 1.8 * T, 1.6 * T, {}));
         this.decor.push(this._f('window', this.w / 2 + 2.6 * T, 1.2 * T, 1.8 * T, 1.6 * T, {}));
+        break;
+      }
+
+      case 'palace': {
+        // 王座（后墙前）
+        const throne = this._f('throne', this.w / 2, 4.4 * T, 1.6 * T, 1.6 * T, {});
+        add(throne); solid(throne);
+        // 两侧立柱
+        for (const [x, y] of [[4 * T, 6.6 * T], [14 * T, 6.6 * T], [4 * T, 10.2 * T], [14 * T, 10.2 * T]]) {
+          const p = this._f('pillar', x, y, 0.9 * T, 2.4 * T, {});
+          add(p); solid(p);
+        }
+        // 两侧案台
+        const ct1 = this._f('counter', 3.4 * T, 3.6 * T, 2.2 * T, 0.9 * T, { color: '#7a4a2c' });
+        add(ct1); solid(ct1);
+        const ct2 = this._f('counter', this.w - 3.4 * T, 3.6 * T, 2.2 * T, 0.9 * T, { color: '#7a4a2c' });
+        add(ct2); solid(ct2);
+        // 中央红毯
+        this.decor.push(this._f('rug', this.w / 2, 9.2 * T, 3.0 * T, 8.4 * T, { color: '#b03a3a' }));
+        this.decor.push(this._f('window', this.w / 2 - 3 * T, 1.2 * T, 1.8 * T, 1.6 * T, {}));
+        this.decor.push(this._f('window', this.w / 2 + 3 * T, 1.2 * T, 1.8 * T, 1.6 * T, {}));
+        add(this._f('plant', 2.2 * T, 6.4 * T, 0.9 * T, 0.9 * T, {}));
+        add(this._f('plant', this.w - 2.2 * T, 6.4 * T, 0.9 * T, 0.9 * T, {}));
         break;
       }
 
@@ -528,6 +553,28 @@ class Interior {
         ctx.fillStyle = shade2(d.color, 0.85);
         rr(ctx, d.cx, d.cy - d.h * 0.48, d.w * 1.15, d.h * 0.12, 2); ctx.fill();
         rr(ctx, d.cx, d.cy + d.h * 0.48, d.w * 1.15, d.h * 0.12, 2); ctx.fill();
+        break;
+      case 'throne':
+        // 台座
+        ctx.fillStyle = '#c9b99a'; rr(ctx, d.cx, d.cy + d.h * 0.3, d.w, d.h * 0.5, 4); ctx.fill();
+        // 高背座椅
+        ctx.fillStyle = '#b8860b'; rr(ctx, d.cx, d.cy - d.h * 0.45, d.w * 0.6, d.h * 0.95, 8); ctx.fill();
+        ctx.fillStyle = '#d4a843'; rr(ctx, d.cx, d.cy - d.h * 0.42, d.w * 0.48, d.h * 0.8, 6); ctx.fill();
+        // 红色坐垫
+        ctx.fillStyle = '#a03030'; rr(ctx, d.cx, d.cy, d.w * 0.5, d.h * 0.25, 4); ctx.fill();
+        // 扶手
+        ctx.fillStyle = '#d4a843';
+        rr(ctx, d.cx - d.w * 0.36, d.cy - d.h * 0.05, d.w * 0.12, d.h * 0.5, 4); ctx.fill();
+        rr(ctx, d.cx + d.w * 0.36, d.cy - d.h * 0.05, d.w * 0.12, d.h * 0.5, 4); ctx.fill();
+        // 皇冠装饰
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.moveTo(d.cx - d.w * 0.2, d.cy - d.h * 0.55);
+        ctx.lineTo(d.cx - d.w * 0.12, d.cy - d.h * 0.75);
+        ctx.lineTo(d.cx, d.cy - d.h * 0.62);
+        ctx.lineTo(d.cx + d.w * 0.12, d.cy - d.h * 0.78);
+        ctx.lineTo(d.cx + d.w * 0.2, d.cy - d.h * 0.55);
+        ctx.closePath(); ctx.fill();
         break;
       default:
         break;
