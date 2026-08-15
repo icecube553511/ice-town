@@ -6,7 +6,9 @@
    性能：先一次性构建可行走栅格，再用二叉堆开表跑 A*
    ============================================================ */
 
-const PF_GRID = 24;
+const PF_GRID = 12; // 四分之一瓦片：足够细，保证膨胀后走廊仍可通行
+const PF_PAD_X = 13; // 玩家半宽（寻路膨胀，防止直行时贴边卡住）
+const PF_PAD_Y = 15; // 玩家碰撞框的上下延伸
 
 // 二叉最小堆（A* 开表）
 class PFMinHeap {
@@ -45,18 +47,25 @@ class PFMinHeap {
 }
 
 // 可行走栅格：1 可走 / 0 不可走（越界视为不可走）
-// 世界提供 blockers（矩形数组）时直接标记，速度更快
+// 世界提供 blockers（矩形数组）时直接标记：按玩家尺寸向外膨胀，
+// 保证角色沿路径点直线行走时不会卡在障碍物边上
 function buildGrid(world, gw, gh) {
   const walk = new Uint8Array(gw * gh);
   walk.fill(1);
   if (world.blockers) {
     for (const bl of world.blockers) {
-      const x0 = Math.max(0, Math.floor(bl.x / PF_GRID));
-      const y0 = Math.max(0, Math.floor(bl.y / PF_GRID));
-      const x1 = Math.min(gw - 1, Math.floor((bl.x + bl.w - 0.01) / PF_GRID));
-      const y1 = Math.min(gh - 1, Math.floor((bl.y + bl.h - 0.01) / PF_GRID));
+      const x0 = Math.max(0, Math.floor((bl.x - PF_PAD_X) / PF_GRID));
+      const y0 = Math.max(0, Math.floor((bl.y - PF_PAD_Y) / PF_GRID));
+      const x1 = Math.min(gw - 1, Math.floor((bl.x + bl.w + PF_PAD_X - 0.01) / PF_GRID));
+      const y1 = Math.min(gh - 1, Math.floor((bl.y + bl.h + PF_PAD_Y - 0.01) / PF_GRID));
       for (let y = y0; y <= y1; y++) {
         for (let x = x0; x <= x1; x++) walk[y * gw + x] = 0;
+      }
+    }
+    // 门洞等特殊可行走区域：覆盖膨胀标记，恢复为可走
+    if (world.clearCells) {
+      for (const [cx, cy] of world.clearCells) {
+        if (cx >= 0 && cy >= 0 && cx < gw && cy < gh) walk[cy * gw + cx] = 1;
       }
     }
   } else {
@@ -93,7 +102,8 @@ function nearestWalkable(walk, gw, gh, gx, gy) {
 
 // 两点间是否存在清晰直线（用于平滑路径）
 function losClear(walk, gw, gh, ax, ay, bx, by) {
-  const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / (PF_GRID * 0.5)));
+  // 每格采样一次即可：障碍物在栅格中已按玩家尺寸膨胀（≥50px），不会漏检
+  const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / PF_GRID));
   for (let i = 1; i < steps; i++) {
     const t = i / steps;
     const x = ax + (bx - ax) * t;
@@ -103,16 +113,24 @@ function losClear(walk, gw, gh, ax, ay, bx, by) {
   return true;
 }
 
-// 拉直路径：贪心跳过中间点，保留视线可达的最远点
+// 拉直路径：二分查找每个拐点视线可达的最远点（LOS 近似单调）
 function smoothPath(walk, gw, gh, points) {
   if (points.length < 3) return points;
   const out = [points[0]];
   let i = 0;
   while (i < points.length - 1) {
-    let j = points.length - 1;
-    while (j > i + 1 && !losClear(walk, gw, gh, points[i].x, points[i].y, points[j].x, points[j].y)) j--;
-    out.push(points[j]);
-    i = j;
+    let lo = i + 1, hi = points.length - 1, best = i + 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (losClear(walk, gw, gh, points[i].x, points[i].y, points[mid].x, points[mid].y)) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    out.push(points[best]);
+    i = best;
   }
   return out;
 }

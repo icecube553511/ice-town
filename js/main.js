@@ -71,7 +71,7 @@
         width: () => town.worldW,
         height: () => town.worldH,
         isWalkable: (cx, cy) => {
-          if (cx < 0 || cy < 0 || cx >= town.tilesW * 2 || cy >= town.tilesH * 2) return false;
+          if (cx < 0 || cy < 0 || cx >= Math.ceil(town.worldW / PF_GRID) || cy >= Math.ceil(town.worldH / PF_GRID)) return false;
           const r = { x: cx * PF_GRID, y: cy * PF_GRID, w: PF_GRID, h: PF_GRID };
           for (const b of town.buildings) {
             const br = b.rect();
@@ -86,11 +86,24 @@
     return {
       bounds: { x: 0, y: 0, w: room.w, h: room.h },
       blockers: room.solids,
+      // 门洞区域：膨胀寻路会堵住门口，这里恢复门洞格子为可行走
+      clearCells: (() => {
+        const list = [];
+        const gx0 = room.doorX - room.doorW / 2;
+        const gx1 = room.doorX + room.doorW / 2;
+        for (let cy = Math.floor((room.h - 48) / PF_GRID); cy < Math.ceil(room.h / PF_GRID); cy++) {
+          for (let cx = 0; cx < Math.ceil(room.w / PF_GRID); cx++) {
+            const x0 = cx * PF_GRID, x1 = x0 + PF_GRID;
+            if (x0 >= gx0 && x1 <= gx1) list.push([cx, cy]);
+          }
+        }
+        return list;
+      })(),
       isSolid: (r) => room.isSolid(r),
       width: () => room.w,
       height: () => room.h,
       isWalkable: (cx, cy) => {
-        if (cx < 0 || cy < 0 || cx >= room.tilesW * 2 || cy >= room.tilesH * 2) return false;
+        if (cx < 0 || cy < 0 || cx >= Math.ceil(room.w / PF_GRID) || cy >= Math.ceil(room.h / PF_GRID)) return false;
         const r = { x: cx * PF_GRID, y: cy * PF_GRID, w: PF_GRID, h: PF_GRID };
         for (const s of room.solids) {
           if (r.x < s.x + s.w && r.x + r.w > s.x &&
@@ -270,24 +283,67 @@
       }
     }
 
-    // 广场区域（淡色）
-    const p = town.plaza;
-    ctx.fillStyle = 'rgba(160,205,230,0.30)';
-    ctx.fillRect(p.x * TILE, p.y * TILE, p.w * TILE, p.h * TILE);
-    ctx.strokeStyle = 'rgba(120,170,205,0.35)';
-    ctx.setLineDash([8, 8]);
-    ctx.strokeRect(p.x * TILE + 2, p.y * TILE + 2, p.w * TILE - 4, p.h * TILE - 4);
-    ctx.setLineDash([]);
-
     ctx.restore();
 
-    // 中心广场文字
+    drawRoads();
+    drawSquares();
+  }
+
+  // ---------- 渲染：道路 ----------
+  function drawRoads() {
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
-    ctx.fillStyle = 'rgba(70,120,155,0.45)';
-    ctx.font = 'bold 26px "Microsoft YaHei", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('冰 雪 广 场', (p.x + p.w / 2) * TILE, p.y * TILE + 30);
+    for (const rd of town.roads) {
+      const x = rd.x * TILE, y = rd.y * TILE, w = rd.w * TILE, h = rd.h * TILE;
+      // 路面
+      ctx.fillStyle = '#d9cfc0';
+      ctx.fillRect(x, y, w, h);
+      // 路边线
+      ctx.strokeStyle = 'rgba(140,115,90,0.4)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      // 中线（虚线）
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 12]);
+      ctx.beginPath();
+      if (w >= h) {
+        ctx.moveTo(x + 8, y + h / 2);
+        ctx.lineTo(x + w - 8, y + h / 2);
+      } else {
+        ctx.moveTo(x + w / 2, y + 8);
+        ctx.lineTo(x + w / 2, y + h - 8);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // 路边积雪
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(x + 4, y + 4, w - 8, 6);
+      ctx.fillRect(x + 4, y + h - 10, w - 8, 6);
+    }
+    ctx.restore();
+  }
+
+  // ---------- 渲染：广场 / 集市铺装 ----------
+  function drawSquares() {
+    ctx.save();
+    ctx.translate(-cam.x, -cam.y);
+    for (const sq of town.squares) {
+      const x = sq.x * TILE, y = sq.y * TILE, w = sq.w * TILE, h = sq.h * TILE;
+      ctx.fillStyle = 'rgba(210,226,236,0.85)';
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = 'rgba(120,170,205,0.45)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 8]);
+      ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+      ctx.setLineDash([]);
+      if (sq.label) {
+        ctx.fillStyle = 'rgba(70,120,155,0.5)';
+        ctx.font = 'bold 24px "Microsoft YaHei", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(sq.label, x + w / 2, y + (sq.labelY || 0.5) * TILE + 10);
+      }
+    }
     ctx.restore();
   }
 
@@ -320,6 +376,10 @@
       case 'fountain': drawFountain(ctx, r.cx, r.cy, b.size, b.color); break;
       case 'ice': drawIce(ctx, r.cx, r.cy, b.size, b.color); break;
       case 'snowman': drawSnowman(ctx, r.cx, r.cy, b.size, b.color); break;
+      case 'stall': drawStall(ctx, r.cx, r.cy, b.size, b.color); break;
+      case 'bench': drawBench(ctx, r.cx, r.cy, b.size, b.color); break;
+      case 'well': drawWell(ctx, r.cx, r.cy, b.size, b.color); break;
+      case 'pond': drawPond(ctx, r.cx, r.cy, b.size, b.color); break;
       case 'church': drawChurch(ctx, b, r); break;
       case 'shop':
       case 'house':
@@ -536,6 +596,107 @@
     ctx.fillStyle = '#3a4557';
     ctx.fillRect(-9, -38, 18, 7);
     ctx.fillRect(-6, -44, 12, 7);
+    ctx.restore();
+  }
+
+  function drawStall(ctx, x, y, s, color = '#e8a24a') {
+    ctx.save();
+    ctx.translate(x, y + 12);
+    ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(30,70,100,0.2)';
+    ctx.beginPath(); ctx.ellipse(0, 18, 21, 5, 0, 0, Math.PI * 2); ctx.fill();
+    // 摊位底座
+    ctx.fillStyle = '#8a5a3b';
+    ctx.fillRect(-16, 2, 32, 16);
+    // 台面
+    ctx.fillStyle = shade('#8a5a3b', 1.1);
+    ctx.fillRect(-18, -2, 36, 6);
+    // 台面货物
+    ctx.fillStyle = '#e06b6b'; ctx.fillRect(-13, -8, 7, 6);
+    ctx.fillStyle = '#6ba85b'; ctx.fillRect(-4, -9, 7, 7);
+    ctx.fillStyle = '#ffd966'; ctx.fillRect(5, -7, 7, 5);
+    // 顶篷（主色 + 白条纹）
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(-20, -2); ctx.lineTo(0, -24); ctx.lineTo(20, -2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.moveTo(-14, -2); ctx.lineTo(-5, -17); ctx.lineTo(-7, -2); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-2, -2); ctx.lineTo(3, -21); ctx.lineTo(6, -2); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(10, -2); ctx.lineTo(13, -16); ctx.lineTo(15, -2); ctx.closePath(); ctx.fill();
+    // 立柱
+    ctx.fillStyle = '#7a4a2c';
+    ctx.fillRect(-19, -2, 3, 20);
+    ctx.fillRect(16, -2, 3, 20);
+    ctx.restore();
+  }
+
+  function drawBench(ctx, x, y, s, color = '#9a6a45') {
+    ctx.save();
+    ctx.translate(x, y + 14);
+    ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(30,70,100,0.2)';
+    ctx.beginPath(); ctx.ellipse(0, 11, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
+    // 座面
+    ctx.fillStyle = color;
+    ctx.fillRect(-14, 0, 28, 5);
+    // 靠背
+    ctx.fillStyle = shade(color, 0.85);
+    ctx.fillRect(-14, -9, 28, 4);
+    // 扶手 / 靠背立柱
+    ctx.fillStyle = shade(color, 1.1);
+    ctx.fillRect(-14, -9, 4, 14);
+    ctx.fillRect(10, -9, 4, 14);
+    // 凳腿
+    ctx.fillStyle = shade(color, 0.75);
+    ctx.fillRect(-12, 5, 4, 6);
+    ctx.fillRect(8, 5, 4, 6);
+    ctx.restore();
+  }
+
+  function drawWell(ctx, x, y, s, color = '#9fb2bd') {
+    ctx.save();
+    ctx.translate(x, y + 16);
+    ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(30,70,100,0.2)';
+    ctx.beginPath(); ctx.ellipse(0, 14, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
+    // 井壁
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(0, 2, 15, 9, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = shade(color, 0.8);
+    ctx.beginPath(); ctx.ellipse(0, 0, 12, 6.5, 0, 0, Math.PI * 2); ctx.fill();
+    // 井水
+    ctx.fillStyle = '#a8d8f0';
+    ctx.beginPath(); ctx.ellipse(0, 0, 9, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    // 支架与顶棚
+    ctx.fillStyle = '#8a5a3b';
+    ctx.fillRect(-14, -24, 4, 26);
+    ctx.fillRect(10, -24, 4, 26);
+    ctx.beginPath(); ctx.moveTo(-16, -24); ctx.lineTo(0, -34); ctx.lineTo(16, -24); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillRect(-12, -32, 24, 4);
+    ctx.restore();
+  }
+
+  function drawPond(ctx, x, y, s, color = '#bde9f7') {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    // 岸沿积雪
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 46, 34, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(180,215,235,0.7)';
+    ctx.beginPath(); ctx.ellipse(0, 2, 42, 30, 0, 0, Math.PI * 2); ctx.fill();
+    // 冰面
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(0, 2, 38, 26, 0, 0, Math.PI * 2); ctx.fill();
+    // 冰裂纹
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-20, -10); ctx.lineTo(-6, -2); ctx.lineTo(-14, 10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8, -14); ctx.lineTo(16, 0); ctx.lineTo(6, 12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-4, 8); ctx.lineTo(10, 14); ctx.stroke();
+    // 反光
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(-10, -6, 10, 5, -0.4, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
