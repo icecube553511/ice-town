@@ -13,8 +13,8 @@ class Player {
     this.h = 30;
     this.speed = 220;            // 像素/秒
     this.frame = 0;
-    this.scarfColor = '#ff5b6e';
-    this.beanieColor = '#3aa0d1';
+    this._walked = false;
+    this._sprinting = false;
     this.path = null;            // 寻路路径点（世界像素坐标数组）
   }
 
@@ -33,7 +33,8 @@ class Player {
     // Shift 疾跑：速度提升，动画加快
     const sprinting = keys.has('ShiftLeft') || keys.has('ShiftRight');
     const speed = sprinting ? this.speed * 1.8 : this.speed;
-    const animRate = sprinting ? 13 : 8;
+    const animRate = sprinting ? 16 : 9;
+    this._sprinting = sprinting;
 
     if (hasKey) {
       // WASD / 方向键手动移动，打断寻路
@@ -68,6 +69,7 @@ class Player {
       }
     } else {
       this._walked = false;
+      this._sprinting = false;
       this.frame = 0;
     }
 
@@ -96,74 +98,186 @@ class Player {
 
   setPath(points) { this.path = points; }
 
-  // 绘制小人（身体朝向根据移动方向）
+  // 绘制像素风小人（白色冬装女生）
+  // 帧：0 待机 / 1-2 走路 / 3-4 跑步
   draw(ctx, cam) {
+    let fi = 0;
+    let bob = 0;
+    if (this._walked) {
+      const alt = Math.floor(this.frame) % 2;
+      if (this._sprinting) {
+        fi = alt ? 4 : 3;
+        bob = Math.sin(this.frame * Math.PI) * 2;
+      } else {
+        fi = alt ? 2 : 1;
+        bob = Math.sin(this.frame * Math.PI) * 1.5;
+      }
+    }
+
     ctx.save();
     ctx.translate(-cam.x, -cam.y);
-    const sx = this.x;
-    const sy = this.y;
-    const bob = this._walked ? Math.sin(this.frame) * 2 : 0;
 
     // 影子
-    ctx.save();
     ctx.fillStyle = 'rgba(30,60,90,0.25)';
     ctx.beginPath();
-    ctx.ellipse(sx, sy + this.h / 2 - 2, this.w / 2, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(this.x, this.y + this.h / 2 - 2, this.w / 2, 6, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    const feet = sy + this.h / 2 + bob;
+    // 像素精灵（块状像素，底部对齐脚底）
+    const P = SPRITE_PX;
+    const feetY = this.y + this.h / 2 + bob;
+    const ox = Math.round(this.x - (SPRITE_W * P) / 2);
+    const oy = Math.round(feetY - SPRITE_H * P);
+    const frame = SPRITE_FRAMES[fi];
+    for (let r = 0; r < frame.length; r++) {
+      const row = frame[r];
+      for (let c = 0; c < row.length; c++) {
+        const ch = row[c];
+        if (ch === '.') continue;
+        ctx.fillStyle = SPRITE_PALETTE[ch] || '#ff00ff';
+        ctx.fillRect(ox + c * P, oy + r * P, P, P);
+      }
+    }
 
-    // 双脚
-    ctx.fillStyle = '#3a4557';
-    ctx.beginPath();
-    ctx.roundRect(sx - 10, feet - 6, 7, 6, 3); ctx.fill();
-    ctx.beginPath();
-    ctx.roundRect(sx + 3, feet - 6, 7, 6, 3); ctx.fill();
-
-    // 身体（围巾外衣）
-    ctx.fillStyle = this.scarfColor;
-    ctx.beginPath();
-    ctx.roundRect(sx - this.w / 2 + 3, feet - 20, this.w - 6, 14, 6); ctx.fill();
-
-    // 围巾
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.roundRect(sx - this.w / 2 + 3, feet - 21, this.w - 6, 4, 3); ctx.fill();
-
-    // 头
-    ctx.fillStyle = '#ffe3c4';
-    ctx.beginPath();
-    ctx.arc(sx, feet - 27, 8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 帽子（绒线帽）
-    ctx.fillStyle = this.beanieColor;
-    ctx.beginPath();
-    ctx.arc(sx, feet - 30, 8.5, Math.PI, 0); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(sx, feet - 30, 8.5, Math.PI, 0);
-    ctx.closePath();
-    // 帽沿
-    ctx.fillStyle = this.beanieColor;
-    ctx.beginPath();
-    ctx.roundRect(sx - 9, feet - 32, 18, 4, 2); ctx.fill();
-    // 帽顶小球
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(sx, feet - 36, 2.5, 0, Math.PI * 2); ctx.fill();
-
-    // 脸颊
-    ctx.fillStyle = 'rgba(255,150,130,0.4)';
-    ctx.beginPath(); ctx.arc(sx - 4.5, feet - 25, 1.6, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(sx + 4.5, feet - 25, 1.6, 0, Math.PI * 2); ctx.fill();
-
-    // 眼睛
-    ctx.fillStyle = '#26323f';
-    ctx.beginPath(); ctx.arc(sx - 3, feet - 28, 1.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(sx + 3, feet - 28, 1.2, 0, Math.PI * 2); ctx.fill();
-
-    ctx.restore();
     ctx.restore();
   }
 }
+
+/* ============================================================
+   像素精灵数据：12 列 × 20 行
+   H 头发 / S 皮肤 / E 眼睛 / C 脸颊 / W 白色主体 / w 白色阴影
+   R 红色缎带 / B 白色靴子 / b 靴子阴影
+   ============================================================ */
+const SPRITE_PX = 3;
+const SPRITE_W = 12;
+const SPRITE_H = 20;
+
+const SPRITE_PALETTE = {
+  H: '#f0c07f',  // 金发
+  S: '#ffe6cc',  // 皮肤
+  E: '#33414f',  // 眼睛
+  C: '#ffb1a0',  // 脸颊
+  W: '#ffffff',  // 白色服装
+  w: '#dbe4ec',  // 白色阴影
+  R: '#e8635a',  // 红色缎带
+  B: '#e6edf4',  // 白色靴子
+  b: '#c9d5e0',  // 靴子阴影
+};
+
+const SPRITE_FRAMES = [
+  // ---- 0 待机 ----
+  [
+    '...HHHHHH...',
+    '..HHHHHHHH..',
+    '.HHSSSSSSHH.',
+    '.HSSSSSSSSH.',
+    '.HSESSSSESH.',
+    '.HSSCSSSCSH.',
+    '.HSSSSSSSSH.',
+    '..HSSSSSSH..',
+    '..HHWWWWHH..',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '..WWWRRWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.wwwwwwwwww.',
+    '..BBBBBBBB..',
+    '..bBBBBBBb..',
+    '............',
+  ],
+  // ---- 1 走路·右脚 ----
+  [
+    '...HHHHHH...',
+    '..HHHHHHHH..',
+    '.HHSSSSSSHH.',
+    '.HSSSSSSSSH.',
+    '.HSESSSSESH.',
+    '.HSSCSSSCSH.',
+    '.HSSSSSSSSH.',
+    '..HSSSSSSH..',
+    '..HHWWWWHH..',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '..WWWRRWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '...BBBBB....',
+    '..bBBBBBb...',
+    '............',
+  ],
+  // ---- 2 走路·左脚 ----
+  [
+    '...HHHHHH...',
+    '..HHHHHHHH..',
+    '.HHSSSSSSHH.',
+    '.HSSSSSSSSH.',
+    '.HSESSSSESH.',
+    '.HSSCSSSCSH.',
+    '.HSSSSSSSSH.',
+    '..HSSSSSSH..',
+    '..HHWWWWHH..',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '..WWWRRWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '....BBBBB...',
+    '...bBBBBBb..',
+    '............',
+  ],
+  // ---- 3 跑步·跨步 ----
+  [
+    '...HHHHHH...',
+    '..HHHHHHHH..',
+    '.HHSSSSSSHH.',
+    '.HSSSSSSSSH.',
+    '.HSESSSSESH.',
+    '.HSSCSSSCSH.',
+    '.HSSSSSSSSH.',
+    '..HSSSSSSH..',
+    '..HHWWWWHH..',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '..WWWRRWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '..WWWWWWWW..',
+    '..wwwwwwww..',
+    '.BBB....BBB.',
+    '.bBB....BBb.',
+    '............',
+  ],
+  // ---- 4 跑步·并步 ----
+  [
+    '...HHHHHH...',
+    '..HHHHHHHH..',
+    '.HHSSSSSSHH.',
+    '.HSSSSSSSSH.',
+    '.HSESSSSESH.',
+    '.HSSCSSSCSH.',
+    '.HSSSSSSSSH.',
+    '..HSSSSSSH..',
+    '..HHWWWWHH..',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '..WWWRRWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '..WWWWWWWW..',
+    '..wwwwwwww..',
+    '...BBBBBB...',
+    '..bBBBBBBb..',
+    '............',
+  ],
+];
