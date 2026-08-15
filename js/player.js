@@ -144,9 +144,9 @@ class Player {
 }
 
 /* ============================================================
-   像素精灵数据：12 列 × 20 行
-   F 白色猫耳/眼睛高光 / P 粉色内耳 / H 金发 / S 皮肤 / E 眼睛 / C 脸颊
-   W 白色斗篷主体 / w 白色阴影 / R 红色围巾 / Y 金色搭扣
+   像素精灵数据：12 列 × 20 行（Q版可爱风）
+   F 白色大帽兜/猫耳/眼睛高光 / P 粉色内耳 / H 金色刘海 / S 皮肤
+   E 眼睛 / C 脸颊 / W 白色裙子/上衣 / w 白色阴影 / R 红色围巾
    B 白色靴子 / b 靴子阴影
    ============================================================ */
 const SPRITE_PX = 2;
@@ -154,16 +154,15 @@ const SPRITE_W = 12;
 const SPRITE_H = 20;
 
 const SPRITE_PALETTE = {
-  F: '#ffffff',  // 白色猫耳 / 眼睛高光
+  F: '#ffffff',  // 白色帽兜 / 猫耳 / 眼睛高光
   P: '#ffb3c8',  // 粉色内耳
-  H: '#f0c07f',  // 金发
+  H: '#f0c07f',  // 金色刘海
   S: '#ffe6cc',  // 皮肤
   E: '#33414f',  // 眼睛
   C: '#ffb1a0',  // 脸颊
-  W: '#ffffff',  // 白色斗篷
+  W: '#ffffff',  // 白色裙子/上衣
   w: '#dbe4ec',  // 白色阴影
   R: '#e8635a',  // 红色围巾
-  Y: '#ffd700',  // 金色搭扣
   B: '#e6edf4',  // 白色靴子
   b: '#c9d5e0',  // 靴子阴影
 };
@@ -171,117 +170,117 @@ const SPRITE_PALETTE = {
 const SPRITE_FRAMES = [
   // ---- 0 待机 ----
   [
-    '..F..HH..F..',
-    '.FF.HHHH.FF.',
-    '.FFPHHHHPFF.',
-    '..HSEESSEH..',
-    '..HSEFSSFEH..',
-    '..HSCSSCSH..',
-    '...HSSSSH...',
-    '..HHRYRRHH..',
-    '..RRWWWWWW..',
-    '.RRWWWWWWWW.',
-    '.RWWWWWWWWW.',
+    '...F....F...',
+    '..FFF..FFF..',
+    '.FFFP..PFFF.',
+    '.FFFFFFFFFF.',
+    '.FFHSSSSSHFF.',
+    '.FFSEESEEFF.',
+    '.FFSEFSFEFF.',
+    '.FFSCSSCSFF.',
+    '.FFSSSSSSFF.',
+    '.FFFFFFFFFF.',
+    '..RRRRRRRR..',
+    '...RRRRRR...',
     '..WWWWWWWW..',
-    '.WWWWWWWWWW.',
     '.WWWWWWWWWW.',
     'WWWWWWWWWWWW',
     'WwwWWWWWWwwW',
-    '.wwwwwwwwww.',
+    '...WW..WW...',
     '..BBBBBBBB..',
     '..bBBBBBBb..',
     '............',
   ],
   // ---- 1 走路·右脚 ----
   [
-    '..F..HH..F..',
-    '.FF.HHHH.FF.',
-    '.FFPHHHHPFF.',
-    '..HSEESSEH..',
-    '..HSEFSSFEH..',
-    '..HSCSSCSH..',
-    '...HSSSSH...',
-    '..HHRYRRHH..',
-    '..RRWWWWWW..',
-    '.RRWWWWWWWW.',
-    '.RWWWWWWWWW.',
+    '...F....F...',
+    '..FFF..FFF..',
+    '.FFFP..PFFF.',
+    '.FFFFFFFFFF.',
+    '.FFHSSSSSHFF.',
+    '.FFSEESEEFF.',
+    '.FFSEFSFEFF.',
+    '.FFSCSSCSFF.',
+    '.FFSSSSSSFF.',
+    '.FFFFFFFFFF.',
+    '..RRRRRRRR..',
+    '...RRRRRR...',
     '..WWWWWWWW..',
-    '.WWWWWWWWWW.',
     '.WWWWWWWWWW.',
     'WWWWWWWWWWWW',
     'WwwWWWWWWwwW',
-    '.wwwwwwwwww.',
-    '...BBBBB....',
-    '..bBBBBBb...',
+    '...WW..WW...',
+    '.....BBBB...',
+    '....bBBBBb..',
     '............',
   ],
   // ---- 2 走路·左脚 ----
   [
-    '..F..HH..F..',
-    '.FF.HHHH.FF.',
-    '.FFPHHHHPFF.',
-    '..HSEESSEH..',
-    '..HSEFSSFEH..',
-    '..HSCSSCSH..',
-    '...HSSSSH...',
-    '..HHRYRRHH..',
-    '..RRWWWWWW..',
-    '.RRWWWWWWWW.',
-    '.RWWWWWWWWW.',
+    '...F....F...',
+    '..FFF..FFF..',
+    '.FFFP..PFFF.',
+    '.FFFFFFFFFF.',
+    '.FFHSSSSSHFF.',
+    '.FFSEESEEFF.',
+    '.FFSEFSFEFF.',
+    '.FFSCSSCSFF.',
+    '.FFSSSSSSFF.',
+    '.FFFFFFFFFF.',
+    '..RRRRRRRR..',
+    '...RRRRRR...',
     '..WWWWWWWW..',
-    '.WWWWWWWWWW.',
     '.WWWWWWWWWW.',
     'WWWWWWWWWWWW',
     'WwwWWWWWWwwW',
-    '.wwwwwwwwww.',
-    '....BBBBB...',
-    '...bBBBBBb..',
+    '...WW..WW...',
+    '...BBBB.....',
+    '..bBBBBb....',
     '............',
   ],
   // ---- 3 跑步·跨步 ----
   [
-    '..F..HH..F..',
-    '.FF.HHHH.FF.',
-    '.FFPHHHHPFF.',
-    '..HSEESSEH..',
-    '..HSEFSSFEH..',
-    '..HSCSSCSH..',
-    '...HSSSSH...',
-    '..HHRYRRHH..',
-    '..RRWWWWWW..',
-    '.RRWWWWWWWW.',
-    '.RWWWWWWWWW.',
+    '...F....F...',
+    '..FFF..FFF..',
+    '.FFFP..PFFF.',
+    '.FFFFFFFFFF.',
+    '.FFHSSSSSHFF.',
+    '.FFSEESEEFF.',
+    '.FFSEFSFEFF.',
+    '.FFSCSSCSFF.',
+    '.FFSSSSSSFF.',
+    '.FFFFFFFFFF.',
+    '..RRRRRRRR..',
+    '...RRRRRR...',
     '..WWWWWWWW..',
     '.WWWWWWWWWW.',
     '.WWWWWWWWWW.',
     '..wwwwwwww..',
-    '..wwwwwwww..',
-    '.BBBB..BBBB.',
-    '.bBBb..BBbb.',
-    '............',
+    '.WWW....WWW.',
+    '.BBB....BBB.',
+    '.bBB....BBb.',
     '............',
   ],
   // ---- 4 跑步·并步 ----
   [
-    '..F..HH..F..',
-    '.FF.HHHH.FF.',
-    '.FFPHHHHPFF.',
-    '..HSEESSEH..',
-    '..HSEFSSFEH..',
-    '..HSCSSCSH..',
-    '...HSSSSH...',
-    '..HHRYRRHH..',
-    '..RRWWWWWW..',
-    '.RRWWWWWWWW.',
-    '.RWWWWWWWWW.',
+    '...F....F...',
+    '..FFF..FFF..',
+    '.FFFP..PFFF.',
+    '.FFFFFFFFFF.',
+    '.FFHSSSSSHFF.',
+    '.FFSEESEEFF.',
+    '.FFSEFSFEFF.',
+    '.FFSCSSCSFF.',
+    '.FFSSSSSSFF.',
+    '.FFFFFFFFFF.',
+    '..RRRRRRRR..',
+    '...RRRRRR...',
     '..WWWWWWWW..',
     '.WWWWWWWWWW.',
     '.WWWWWWWWWW.',
     '..wwwwwwww..',
-    '..wwwwwwww..',
+    '...WWWWWW...',
     '...BBBBBB...',
     '..bBBBBBBb..',
-    '............',
     '............',
   ],
 ];
