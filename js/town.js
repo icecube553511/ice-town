@@ -14,6 +14,10 @@ const BUILDING_TYPES = {
   library: { name: '图书馆', icon: '📚', w: 2, h: 2 },
   church:  { name: '教堂', icon: '⛪', w: 3, h: 2 },
   inn:     { name: '旅店', icon: '🛏', w: 2, h: 2 },
+  palace:  { name: '王宫', icon: '👑', w: 3, h: 3 },
+  tower:   { name: '瞭望塔', icon: '🏰', w: 2, h: 2 },
+  wall:    { name: '城墙', icon: '🧱', w: 1, h: 1 },
+  statue:  { name: '雕像', icon: '🗿', w: 1, h: 1 },
   stall:   { name: '集市摊位', icon: '⛺', w: 1, h: 1 },
   bench:   { name: '长椅', icon: '🪑', w: 1, h: 1 },
   well:    { name: '水井', icon: '🪣', w: 1, h: 1 },
@@ -57,30 +61,51 @@ class Building {
 Building._seq = 0;
 
 class Town {
-  constructor() {
-    // 世界范围（瓦片）
-    this.tilesW = 64;
-    this.tilesH = 48;
-    // 道路规划（装饰地面，非碰撞）：{ x, y, w, h } 瓦片矩形
-    // 所有道路必须与主街/大道连通，不允许出现孤立的道路段
-    this.roads = [
-      { x: 31, y: 0, w: 2, h: 48 },   // 南北主街
-      { x: 0, y: 23, w: 64, h: 2 },   // 东西大道
-      { x: 8, y: 16, w: 24, h: 1 },   // 集市后巷（东端接主街）
-      { x: 31, y: 13, w: 30, h: 1 },  // 生活区小路（西端接主街）
-      { x: 58, y: 8, w: 1, h: 6 },    // 生活区岔路（通池塘，南端接生活区小路）
-      { x: 17, y: 25, w: 1, h: 16 },  // 冰雕公园小径（北端接大道）
-    ];
-    // 广场/集市铺装区：{ x, y, w, h, label, labelY }（labelY 为标签相对顶部的瓦片偏移）
-    this.squares = [
-      { x: 27, y: 19, w: 7, h: 7, label: '冰 雪 广 场', labelY: 0.5 },
-      { x: 8, y: 17, w: 16, h: 6, label: '周 末 集 市', labelY: 2.8 },
-      { x: 34, y: 21, w: 5, h: 2, label: '' },
-    ];
+  constructor(kind = 'town') {
+    this.kind = kind;
+    if (kind === 'palace') {
+      // ===== 王室宫城 =====
+      this.tilesW = 48;
+      this.tilesH = 40;
+      this.roads = [
+        { x: 0, y: 20, w: 9, h: 2 },   // 迎宾大道（宫门外）
+        { x: 9, y: 20, w: 14, h: 2 },  // 宫内甬道（宫门到王宫）
+      ];
+      this.squares = [
+        { x: 1, y: 17, w: 6, h: 8, label: '' },        // 宫门外接引广场
+        { x: 12, y: 14, w: 24, h: 16, label: '王 室 宫 城' }, // 宫内广场
+      ];
+      this.teleports = [
+        { x: 0, y: 19, w: 2, h: 3, to: 'town', spawn: { x: 60.5 * TILE, y: 23.5 * TILE }, text: '正在返回小镇…' },
+      ];
+    } else {
+      // ===== 冰雪小镇 =====
+      this.tilesW = 64;
+      this.tilesH = 48;
+      // 道路规划（装饰地面，非碰撞）：{ x, y, w, h } 瓦片矩形
+      // 所有道路必须与主街/大道连通，不允许出现孤立的道路段
+      this.roads = [
+        { x: 31, y: 0, w: 2, h: 48 },   // 南北主街
+        { x: 0, y: 23, w: 64, h: 2 },   // 东西大道
+        { x: 8, y: 16, w: 24, h: 1 },   // 集市后巷（东端接主街）
+        { x: 31, y: 13, w: 30, h: 1 },  // 生活区小路（西端接主街）
+        { x: 58, y: 8, w: 1, h: 6 },    // 生活区岔路（通池塘，南端接生活区小路）
+        { x: 17, y: 25, w: 1, h: 16 },  // 冰雕公园小径（北端接大道）
+      ];
+      this.squares = [
+        { x: 27, y: 19, w: 7, h: 7, label: '冰 雪 广 场', labelY: 0.5 },
+        { x: 8, y: 17, w: 16, h: 6, label: '周 末 集 市', labelY: 2.8 },
+        { x: 34, y: 21, w: 5, h: 2, label: '' },
+      ];
+      this.teleports = [
+        { x: 62, y: 22, w: 2, h: 3, to: 'palace', spawn: { x: 2.5 * TILE, y: 20.5 * TILE }, text: '正在前往王室宫城…' },
+      ];
+    }
     this.buildings = [];
     // 纯装饰树（固定、不可编辑），用于填充地块
     this.decorTrees = [];
-    this._buildDefaultTown();
+    if (kind === 'palace') this._buildPalaceLayout();
+    else this._buildDefaultTown();
     this._fillDecorTrees();
   }
 
@@ -95,13 +120,25 @@ class Town {
   _inRoad(tx, ty) {
     return this.roads.some((r) => tx >= r.x && tx < r.x + r.w && ty >= r.y && ty < r.y + r.h);
   }
+  _inTeleport(tx, ty) {
+    return (this.teleports || []).some((p) => tx >= p.x && tx < p.x + p.w && ty >= p.y && ty < p.y + p.h);
+  }
 
-  // 地块填充装饰树（避开道路、广场与建筑）
+  // 玩家矩形是否进入某个传送点（返回传送点配置）
+  teleportAt(r) {
+    for (const tp of this.teleports || []) {
+      const zx = tp.x * TILE, zy = tp.y * TILE, zw = tp.w * TILE, zh = tp.h * TILE;
+      if (r.x < zx + zw && r.x + r.w > zx && r.y < zy + zh && r.y + r.h > zy) return tp;
+    }
+    return null;
+  }
+
+  // 地块填充装饰树（避开道路、广场、传送点与建筑）
   _fillDecorTrees() {
     for (let i = 0; i < 320; i++) {
       const tx = 1 + this._rand(this.tilesW - 2);
       const ty = 1 + this._rand(this.tilesH - 2);
-      if (this._inSquare(tx, ty) || this._inRoad(tx, ty)) continue;
+      if (this._inSquare(tx, ty) || this._inRoad(tx, ty) || this._inTeleport(tx, ty)) continue;
       if (this.isOccupied(tx, ty, 1, 1)) continue;
       this.decorTrees.push({ x: tx, y: ty, s: 0.6 + Math.random() * 0.5 });
     }
@@ -250,6 +287,43 @@ class Town {
     this.addBuilding('snowman', 22, 30, { color: '#ffffff', size: 0.9 });
   }
 
+  // ---- 王室宫城布局 ----
+  _buildPalaceLayout() {
+    // 宫墙（西墙留门洞 y19-21）
+    for (let x = 8; x <= 40; x++) {
+      this.addBuilding('wall', x, 8, { color: '#b8bec8' });    // 北墙
+      this.addBuilding('wall', x, 32, { color: '#b8bec8' });   // 南墙
+    }
+    for (let y = 9; y <= 18; y++) this.addBuilding('wall', 8, y, { color: '#b8bec8' });   // 西墙上段
+    for (let y = 22; y <= 31; y++) this.addBuilding('wall', 8, y, { color: '#b8bec8' });  // 西墙下段
+    for (let y = 9; y <= 31; y++) this.addBuilding('wall', 40, y, { color: '#b8bec8' });  // 东墙
+    // 角楼与门楼
+    for (const [tx, ty] of [[9, 9], [38, 9], [9, 30], [38, 30], [9, 18], [9, 22]]) {
+      this.addBuilding('tower', tx, ty, { name: '瞭望塔', color: '#cdd5de' });
+    }
+    // 王宫（3x3，可进入）
+    this.addBuilding('palace', 22, 17, { name: '冰雪王宫', color: '#f5e6d0' });
+    // 卫兵雕像
+    this.addBuilding('statue', 19, 18, { name: '卫兵雕像', color: '#9aa7b2' });
+    this.addBuilding('statue', 25, 18, { name: '卫兵雕像', color: '#9aa7b2' });
+    this.addBuilding('statue', 5, 18, { name: '卫兵雕像', color: '#9aa7b2' });
+    this.addBuilding('statue', 5, 23, { name: '卫兵雕像', color: '#9aa7b2' });
+    // 御花园（宫内西侧）
+    this.addBuilding('fountain', 13, 27, { name: '御花园喷泉', color: '#7ec8e3' });
+    this.addBuilding('ice', 14, 15, { name: '冰雕·天鹅', color: '#bfe9f5' });
+    this.addBuilding('ice', 19, 14, { name: '冰雕·驯鹿', color: '#cfeefb' });
+    this.addBuilding('ice', 12, 24, { name: '冰雕·小熊', color: '#a8dcef' });
+    this.addBuilding('ice', 20, 30, { name: '冰雕·企鹅', color: '#bfe9f5', size: 0.9 });
+    this.addBuilding('bench', 11, 25, { color: '#9a6a45' });
+    this.addBuilding('bench', 17, 25, { color: '#9a6a45' });
+    this.addBuilding('bench', 36, 20, { color: '#9a6a45' });
+    this.addBuilding('bench', 36, 22, { color: '#9a6a45' });
+    // 路灯
+    for (const [lx, ly] of [[11, 19], [14, 19], [17, 19], [20, 19], [36, 19], [36, 24], [26, 27], [26, 30], [3, 19], [3, 23]]) {
+      this.addBuilding('lamp', lx, ly, { color: '#ffd966' });
+    }
+  }
+
   toJSON() {
     return JSON.stringify(this.buildings.map(b => ({
       id: b.id, type: b.type, tileX: b.tileX, tileY: b.tileY,
@@ -273,4 +347,5 @@ class Town {
   }
 }
 
-const town = new Town();
+const town = new Town('town');
+const palace = new Town('palace');
