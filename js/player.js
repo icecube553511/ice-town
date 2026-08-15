@@ -144,144 +144,137 @@ class Player {
 }
 
 /* ============================================================
-   鍍忕礌绮剧伒鏁版嵁锛?2 鍒?脳 20 琛岋紙淇コ椋幝稱鐗堬級
-   F 鐧借壊鍖呭ご宸?棰嗗彛/鐪肩潧楂樺厜 / H 閲戣壊鍒樻捣 / S 鐨偆 / E 鐪肩潧 / C 鑴搁
-   K 娣辫壊淇コ鏈?/ k 娣辫壊闃村奖/灏忕毊闉?/ Y 閲戣壊鍗佸瓧 / W 鐧借壊 / w 鐧借壊闃村奖
+   像素精灵数据：12 列 × 20 行（白色幽灵）
+   W 白色幽灵身体 / w 白色阴影 / E 眼睛 / F 眼睛高光
+   C 腮红 / M 嘴巴
    ============================================================ */
 const SPRITE_PX = 2;
 const SPRITE_W = 12;
 const SPRITE_H = 20;
 
 const SPRITE_PALETTE = {
-  F: '#ffffff',  // 鐧借壊鍖呭ご宸?/ 棰嗗彛 / 鐪肩潧楂樺厜
-  H: '#f0c07f',  // 閲戣壊鍒樻捣
-  S: '#ffe6cc',  // 鐨偆
-  E: '#33414f',  // 鐪肩潧
-  C: '#ffb1a0',  // 鑴搁
-  K: '#3b4352',  // 娣辫壊淇コ鏈?
-  k: '#2e3440',  // 娣辫壊闃村奖 / 灏忕毊闉?
-  Y: '#ffd700',  // 閲戣壊鍗佸瓧
-  W: '#ffffff',  // 鐧借壊
-  w: '#dbe4ec',  // 鐧借壊闃村奖
-  R: '#e8635a',  // 绾㈣壊
-  B: '#e6edf4',  // 鐧借壊闈村瓙
-  b: '#c9d5e0',  // 闈村瓙闃村奖
+  W: '#ffffff',  // 幽灵身体
+  w: '#dbe4ec',  // 白色阴影
+  E: '#33414f',  // 眼睛
+  F: '#ffffff',  // 眼睛高光
+  C: '#ffb1a0',  // 腮红
+  M: '#4a5568',  // 嘴巴
 };
 
 const SPRITE_FRAMES = [
-  // ---- 0 寰呮満 ----
+  // ---- 0 待机 ----
   [
-    '...FFFFFF...',
-    '..FFFYFFFF..',
-    '.FFFSSSSFFF.',
-    '.FFHSSSSHFF.',
-    '.FFSEESEEFF.',
-    '.FFSEFSFEFF.',
-    '.FFSCSSCSFF.',
-    '.FFSSSSSSFF.',
-    '.FFFFFFFFFF.',
-    '.FFFFFFFFFF.',
-    '.SSSSSSSSSS.',
-    '.SSSSSSSSSS.',
-    '.KSSSSSSSSK.',
-    '.KKSSYSSSKK.',
-    '..KKKKKKKK..',
-    '..KKKKKKKK..',
-    '.KKKKKKKKKK.',
-    '..kkkkkkkk..',
-    '..SSS..SSS..',
-    '...kk..kk...',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWEEWWEEWW.',
+    '.WWEFWWEFWW.',
+    '.WWCWWWWCWW.',
+    '.WWWWMMWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.wwwwwwwwww.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWW.WWW.WWW',
+    '.WWW.WWW.WWW',
+    '..W...W...W.',
+    '............',
+    '............',
+    '............',
   ],
-  // ---- 1 璧拌矾路鍙宠剼 ----
+  // ---- 1 走路·尾摆右 ----
   [
-    '...FFFFFF...',
-    '..FFFYFFFF..',
-    '.FFFSSSSFFF.',
-    '.FFHSSSSHFF.',
-    '.FFSEESEEFF.',
-    '.FFSEFSFEFF.',
-    '.FFSCSSCSFF.',
-    '.FFSSSSSSFF.',
-    '.FFFFFFFFFF.',
-    '.FFFFFFFFFF.',
-    '.SSSSSSSSSS.',
-    '.SSSSSSSSSS.',
-    '.KSSSSSSSSK.',
-    '.KKSSYSSSKK.',
-    '..KKKKKKKK..',
-    '..KKKKKKKK..',
-    '.KKKKKKKKKK.',
-    '..kkkkkkkk..',
-    '..SSS..SSS..',
-    '.....kkkk...',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWEEWWEEWW.',
+    '.WWEFWWEFWW.',
+    '.WWCWWWWCWW.',
+    '.WWWWMMWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.wwwwwwwwww.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWW.WWW.WWW',
+    '.WWW.WWW.WWW',
+    '.W...W...W..',
+    '............',
+    '............',
+    '............',
   ],
-  // ---- 2 璧拌矾路宸﹁剼 ----
+  // ---- 2 走路·尾摆左 ----
   [
-    '...FFFFFF...',
-    '..FFFYFFFF..',
-    '.FFFSSSSFFF.',
-    '.FFHSSSSHFF.',
-    '.FFSEESEEFF.',
-    '.FFSEFSFEFF.',
-    '.FFSCSSCSFF.',
-    '.FFSSSSSSFF.',
-    '.FFFFFFFFFF.',
-    '.FFFFFFFFFF.',
-    '.SSSSSSSSSS.',
-    '.SSSSSSSSSS.',
-    '.KSSSSSSSSK.',
-    '.KKSSYSSSKK.',
-    '..KKKKKKKK..',
-    '..KKKKKKKK..',
-    '.KKKKKKKKKK.',
-    '..kkkkkkkk..',
-    '..SSS..SSS..',
-    '...kkkk.....',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWEEWWEEWW.',
+    '.WWEFWWEFWW.',
+    '.WWCWWWWCWW.',
+    '.WWWWMMWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.wwwwwwwwww.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWW.WWW.WWW',
+    '.WWW.WWW.WWW',
+    '..W...W...W.',
+    '............',
+    '............',
+    '............',
   ],
-  // ---- 3 璺戞路璺ㄦ ----
+  // ---- 3 跑步·冲刺 ----
   [
-    '...FFFFFF...',
-    '..FFFYFFFF..',
-    '.FFFSSSSFFF.',
-    '.FFHSSSSHFF.',
-    '.FFSEESEEFF.',
-    '.FFSEFSFEFF.',
-    '.FFSCSSCSFF.',
-    '.FFSSSSSSFF.',
-    '.FFFFFFFFFF.',
-    '.FFFFFFFFFF.',
-    '.SSSSSSSSSS.',
-    '.SSSSSSSSSS.',
-    '.KSSSSSSSSK.',
-    '.KKSSYSSSKK.',
-    '..KKKKKKKK..',
-    '..KKKKKKKK..',
-    '..kkkkkkkk..',
-    '.SSS....SSS.',
-    '.SSS....SSS.',
-    '.kk......kk.',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWEEWWEEWW.',
+    '.WWWWWWWWWW.',
+    '.WWCWWWWCWW.',
+    '.WWWMMMWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.wwwwwwwwww.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '..WWWWWWWW..',
+    '.WWW.WWW.WWW',
+    '..W...W...W.',
+    '............',
+    '............',
+    '............',
+    '............',
   ],
-  // ---- 4 璺戞路骞舵 ----
+  // ---- 4 跑步·冲刺2 ----
   [
-    '...FFFFFF...',
-    '..FFFYFFFF..',
-    '.FFFSSSSFFF.',
-    '.FFHSSSSHFF.',
-    '.FFSEESEEFF.',
-    '.FFSEFSFEFF.',
-    '.FFSCSSCSFF.',
-    '.FFSSSSSSFF.',
-    '.FFFFFFFFFF.',
-    '.FFFFFFFFFF.',
-    '.SSSSSSSSSS.',
-    '.SSSSSSSSSS.',
-    '.KSSSSSSSSK.',
-    '.KKSSYSSSKK.',
-    '..KKKKKKKK..',
-    '..KKKKKKKK..',
-    '..kkkkkkkk..',
-    '...SSSSSS...',
-    '...SSSSSS...',
-    '...kkkkkk...',
+    '...WWWWWW...',
+    '..WWWWWWWW..',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWEEWWEEWW.',
+    '.WWWWWWWWWW.',
+    '.WWCWWWWCWW.',
+    '.WWWMMMWWWW.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '.wwwwwwwwww.',
+    '.WWWWWWWWWW.',
+    '.WWWWWWWWWW.',
+    '...WWWWWW...',
+    '.WWW.WWW.WWW',
+    '.W...W...W..',
+    '............',
+    '............',
+    '............',
+    '............',
   ],
 ];
