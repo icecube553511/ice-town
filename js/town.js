@@ -62,13 +62,14 @@ class Town {
     this.tilesW = 64;
     this.tilesH = 48;
     // 道路规划（装饰地面，非碰撞）：{ x, y, w, h } 瓦片矩形
+    // 所有道路必须与主街/大道连通，不允许出现孤立的道路段
     this.roads = [
       { x: 31, y: 0, w: 2, h: 48 },   // 南北主街
       { x: 0, y: 23, w: 64, h: 2 },   // 东西大道
-      { x: 8, y: 16, w: 16, h: 1 },   // 集市后巷
-      { x: 39, y: 13, w: 22, h: 1 },  // 生活区小路
-      { x: 58, y: 8, w: 1, h: 6 },    // 生活区岔路（通向池塘）
-      { x: 17, y: 25, w: 2, h: 16 },  // 冰雕公园小径
+      { x: 8, y: 16, w: 24, h: 1 },   // 集市后巷（东端接主街）
+      { x: 31, y: 13, w: 30, h: 1 },  // 生活区小路（西端接主街）
+      { x: 58, y: 8, w: 1, h: 6 },    // 生活区岔路（通池塘，南端接生活区小路）
+      { x: 17, y: 25, w: 1, h: 16 },  // 冰雕公园小径（北端接大道）
     ];
     // 广场/集市铺装区：{ x, y, w, h, label, labelY }（labelY 为标签相对顶部的瓦片偏移）
     this.squares = [
@@ -167,12 +168,12 @@ class Town {
   _buildDefaultTown() {
     const colors = ['#7ec8e3', '#a9d8f0', '#e8f4fa', '#9ac8dc', '#b8dff0', '#f2c9a0', '#c9e6f2'];
 
-    // ---- 中心广场（主街 × 大道交叉口） ----
+    // ---- 中心广场（主街 × 大道交叉口，建筑避开道路） ----
     this.addBuilding('fountain', 29, 21, { name: '中央喷泉', color: '#7ec8e3', size: 1.2 });
     this.addBuilding('ice', 28, 20, { name: '冰雕·天鹅', color: '#bfe9f5' });
-    this.addBuilding('ice', 32, 20, { name: '冰雕·小熊', color: '#a8dcef', size: 1.1 });
-    this.addBuilding('ice', 28, 24, { name: '冰雕·驯鹿', color: '#cfeefb' });
-    this.addBuilding('ice', 32, 24, { name: '冰雕·企鹅', color: '#bfe9f5', size: 0.9 });
+    this.addBuilding('ice', 30, 19, { name: '冰雕·小熊', color: '#a8dcef', size: 1.1 });
+    this.addBuilding('ice', 33, 20, { name: '冰雕·驯鹿', color: '#cfeefb' });
+    this.addBuilding('ice', 28, 25, { name: '冰雕·企鹅', color: '#bfe9f5', size: 0.9 });
     for (const [lx, ly] of [[27, 19], [33, 19], [27, 25], [33, 25]]) {
       this.addBuilding('lamp', lx, ly, { color: '#ffd966' });
     }
