@@ -217,7 +217,8 @@ const Editor = (() => {
 
   // ---------- 保存 / 加载 ----------
   // file:// 或隐私模式下 localStorage 可能被浏览器限制，访问都包一层 try/catch
-  const SAVE_KEY = 'icetown_save_v1';
+  // 小镇布局大改时升级版本号，旧布局存档自动作废
+  const SAVE_KEY = 'icetown_save_v2';
   const store = {
     get(k) {
       try { return localStorage.getItem(k); } catch (e) { return null; }

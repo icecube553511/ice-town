@@ -141,6 +141,26 @@
     cam.y = d.y;
   }
 
+  // 在玩家附近螺旋寻找一个不与其他建筑重叠的安全位置
+  function findSafeSpot() {
+    const world = currentWorld();
+    const rw = player.w;
+    const rh = player.h * 0.7;
+    for (let r = 0; r < 40; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          const x = player.x + dx * TILE;
+          const y = player.y + dy * TILE;
+          if (x - rw / 2 < 0 || y - rh / 2 < 0 || x + rw / 2 > world.width() || y + rh / 2 > world.height()) continue;
+          const rect = { x: x - rw / 2, y: y - rh / 2, w: rw, h: rh };
+          if (!world.isSolid(rect)) return { x, y };
+        }
+      }
+    }
+    return null;
+  }
+
   // ---------- 门交互 ----------
   const ENTERABLE = ['house', 'shop', 'ice', 'tavern', 'bakery', 'library', 'church', 'inn'];
   const doorHint = document.getElementById('door-hint');
@@ -1063,6 +1083,15 @@
       const hadKeys = keys.size > 0;
       player.update(dt, keys, currentWorld());
       if (hadKeys) autoEnter = null; // 手动移动打断后取消自动进门
+      // 防卡死：因旧存档 / 编辑等原因被建筑困住时，自动传送到附近安全位置
+      if (currentWorld().isSolid(player.rect())) {
+        const spot = findSafeSpot();
+        if (spot) {
+          player.setPosition(spot.x, spot.y);
+          player.path = null;
+          autoEnter = null;
+        }
+      }
       // 点击建筑后：走到门前且路径走完，自动进入
       if (autoEnter && (!player.path || player.path.length === 0)) {
         const b = autoEnter;
